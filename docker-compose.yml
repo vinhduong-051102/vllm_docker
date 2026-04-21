@@ -1,22 +1,31 @@
 version: "3.9"
 
 services:
-  vllm:
+  vllm-qwen:
     image: vllm/vllm-openai:latest
-    container_name: vllm-qwen14b
+    container_name: vllm-qwen-1.7b
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
+      - LC_ALL=C.UTF-8 # Đảm bảo xử lý ký tự tiếng Việt tốt
     ports:
       - "8000:8000"
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
+    shm_size: '4gb' # Quan trọng để vLLM hoạt động mượt mà
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     command: >
-      --model Qwen/Qwen2.5-14B-Instruct
+      --model Qwen/Qwen2.5-1.7B-Instruct
       --trust-remote-code
-      --dtype auto
-      --gpu-memory-utilization 0.9
-      --max-model-len 16384
+      --dtype float16
+      --gpu-memory-utilization 0.5
+      --max-model-len 8192
       --enable-auto-tool-choice
       --tool-call-parser hermes
-      --quantization awq
+    restart: unless-stopped
